@@ -51,7 +51,7 @@ public class Jeu {
 
     private void initialiserCartes() {
         // Création des cartes normales
-        String[] couleurs = {"Rouge", "Bleu", "Vert", "Violet", "Jaune", "Orange"};
+        String[] couleurs = {"Rouge", "Bleu", "Vert"};
         for (String couleur : couleurs) {
             for (int valeur = 1; valeur <= 9; valeur++) {
                 deck.add(new Carte(couleur, valeur));
@@ -164,8 +164,8 @@ public class Jeu {
         return false;
     }
 
-
     public Variante getVariante() {
         return variante;
     }
 }
+

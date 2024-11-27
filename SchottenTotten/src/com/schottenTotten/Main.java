@@ -20,7 +20,7 @@ public class Main {
 
         // Initialisation d'une borne
         Muraille borne = new Muraille();
-        Borne.ajouterCarte(1, carte1);
+        borne.ajouterCarte(1, carte1);
         borne.ajouterCarte(2, carte2);
 
         // Affichage pour vérification
