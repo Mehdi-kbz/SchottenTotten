@@ -48,7 +48,7 @@ public class ConsoleView {
         // Initialisation du jeu
         Jeu jeu = new Jeu(nomJoueur1, isIA1, nomJoueur2, isIA2, variante);
         System.out.println("Le jeu commence avec la variante " + jeu.getVariante() + " !");
-        jeu.afficherEtat();
+        jeu.afficherEtat( nomJoueur1,  nomJoueur2);
 
         boolean partieEnCours = true;
         int compteurTours = 0;
@@ -68,22 +68,48 @@ public class ConsoleView {
                     boolean carteJouee = false;
                     while (!carteJouee) {
                         try {
+                        	System.out.println("Nombre de cartes restantes dans le deck"+jeu.getTailleDeck());
                             System.out.println(joueur.getNom() + ", choisissez une carte à jouer :");
 
+                            // Afficher les cartes restantes dans la main du joueur
                             for (int i = 0; i < joueur.getMain().size(); i++) {
                                 System.out.println((i + 1) + ": " + joueur.getMain().get(i));
                             }
 
                             System.out.print("Numéro de la carte : ");
                             int numCarte = scanner.nextInt() - 1;
+
+                            // Vérification de la validité de la carte choisie
+                            if (numCarte < 0 || numCarte >= joueur.getMain().size()) {
+                                System.out.println("Numéro invalide. Veuillez réessayer.");
+                                continue;
+                            }
+
                             Carte carteChoisie = joueur.getMain().get(numCarte);
 
                             System.out.print("Choisissez la muraille (1-9) : ");
                             int numeroMuraille = scanner.nextInt() - 1;
 
-                            jeu.jouerTour(numeroMuraille, j, carteChoisie);
-                            joueur.getMain().remove(numCarte); // Retire la carte après avoir joué
+                            // Vérification de la validité de la muraille choisie
+                            if (numeroMuraille < 0 || numeroMuraille >= 9) {
+                                System.out.println("Numéro de muraille invalide. Veuillez réessayer.");
+                                continue;
+                            }
+
+                            // Joue la carte
+                            jeu.jouerTour(numeroMuraille, jeu.getJoueur(j), carteChoisie);
+                            joueur.getMain().remove(numCarte); // Retire la carte après l'avoir jouée
+
+                            // Piocher une carte et l'ajouter à la main du joueur
+                            Carte nouvelleCarte = jeu.piocherCarte(); // Pioche une nouvelle carte
+                            if (nouvelleCarte != null) {
+                                joueur.ajouterCarte(nouvelleCarte);
+                            } else {
+                                System.out.println("Le deck est vide. Plus de cartes à piocher.");
+                            }
+
                             carteJouee = true;
+
                         } catch (Exception e) {
                             System.out.println("Entrée invalide. Veuillez réessayer.");
                             scanner.nextLine(); // Vide le scanner
@@ -92,7 +118,7 @@ public class ConsoleView {
                 }
             }
 
-            jeu.afficherEtat();
+            jeu.afficherEtat( nomJoueur1,  nomJoueur2);
 
             // Vérifie les conditions de victoire ou d'arrêt
             if (jeu.verifierVictoire()) {
@@ -121,4 +147,3 @@ public class ConsoleView {
         scanner.close();
     }
 }
-

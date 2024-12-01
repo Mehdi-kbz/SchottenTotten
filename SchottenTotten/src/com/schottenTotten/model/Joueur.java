@@ -14,6 +14,11 @@ public class Joueur {
         this.main = new ArrayList<>();
     }
 
+    @Override
+    public String toString() {
+        return nom; // Retourne le nom du joueur
+    }
+
     public String getNom() {
         return nom;
     }

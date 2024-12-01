@@ -2,11 +2,11 @@ package com.schottenTotten.controller;
 
 import com.schottenTotten.model.Muraille;
 import com.schottenTotten.model.Carte;
+import com.schottenTotten.model.CarteBlocage;
+import com.schottenTotten.model.CarteRenfort;
 import com.schottenTotten.model.Joueur;
 import com.schottenTotten.model.Variante;
 import com.schottenTotten.ai.IA;
-import com.schottenTotten.tactique.CarteRenfort;
-import com.schottenTotten.tactique.CarteBlocage;
 import com.schottenTotten.stats.ScoreManager;
 
 import java.util.ArrayList;
@@ -17,7 +17,10 @@ public class Jeu {
     private Joueur joueur1;
     private Joueur joueur2;
     private List<Muraille> murailles;
-    private List<Carte> deck;
+    public List<Carte> deck;
+    public List<Carte> getDeck() {
+        return deck;
+    }
     private IA ia;
     private ScoreManager scoreManager;
     private Variante variante;
@@ -38,20 +41,20 @@ public class Jeu {
 
     private void initialiserMurailles() {
         // Ajoute des Murailles avec différents types de formation
-        murailles.add(new Muraille("Suite couleur"));
-        murailles.add(new Muraille("Somme"));
-        murailles.add(new Muraille("Même valeur"));
-        murailles.add(new Muraille("Suite couleur"));
-        murailles.add(new Muraille("Somme"));
-        murailles.add(new Muraille("Même valeur"));
-        murailles.add(new Muraille("Suite couleur"));
-        murailles.add(new Muraille("Somme"));
-        murailles.add(new Muraille("Même valeur"));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
+        murailles.add(new Muraille(joueur1,joueur2));
     }
 
     private void initialiserCartes() {
         // Création des cartes normales
-        String[] couleurs = {"Rouge", "Bleu", "Vert"};
+        String[] couleurs = {"Rouge", "Bleu", "Vert", "Violet", "Jaune", "Orange"};
         for (String couleur : couleurs) {
             for (int valeur = 1; valeur <= 9; valeur++) {
                 deck.add(new Carte(couleur, valeur));
@@ -69,63 +72,107 @@ public class Jeu {
         // Mélange des cartes
         Collections.shuffle(deck);
 
-        // Distribution des cartes aux joueurs
-        int nombreCartesParJoueur = 9;
+        // Distribution initiale des cartes aux joueurs
+        int nombreCartesParJoueur = 6;
         for (int i = 0; i < nombreCartesParJoueur; i++) {
             joueur1.ajouterCarte(deck.remove(0));
             joueur2.ajouterCarte(deck.remove(0));
         }
     }
-
-    public void afficherEtat() {
-        System.out.println("État actuel des murailles :");
+    public void afficherEtat(String nomJoueur1, String nomJoueur2) {
+        System.out.println("=== État actuel des murailles ===");
         for (int i = 0; i < murailles.size(); i++) {
             Muraille muraille = murailles.get(i);
-            System.out.println("Muraille " + (i + 1) + " (" + muraille.getTypeFormation() + ") :");
-            System.out.println("  Joueur 1 : " + muraille.getCartesJoueur1());
-            System.out.println("  Joueur 2 : " + muraille.getCartesJoueur2());
-            if (muraille.isEndommagee()) {
-                System.out.println("  --> Cette muraille est endommagée !");
-            }
+            Joueur titulaire = muraille.getJoueurRevendiquant();
+            String titulaireNom = (titulaire != null) ? titulaire.getNom() : "Non revendiquée";
+
+            System.out.println("Muraille " + (i + 1) + " (" + titulaireNom + ") :");
+            System.out.println(nomJoueur1 + " : " + muraille.getCartesJoueur1());
+            System.out.println(nomJoueur2 + " : " + muraille.getCartesJoueur2());
         }
     }
+
 
     public Joueur getJoueur(int joueurNum) {
         return joueurNum == 1 ? joueur1 : joueur2;
     }
 
-    public void jouerTour(int numeroMuraille, int joueur, Carte carte) {
+    public void jouerTour(int numeroMuraille, Joueur joueur, Carte carte) {
         Muraille muraille = murailles.get(numeroMuraille);
         if (muraille.ajouterCarte(joueur, carte)) {
-            System.out.println("Carte jouée sur la Muraille " + (numeroMuraille + 1));
+            System.out.println(joueur.getNom() + " a joué " + carte + " sur la Muraille " + (numeroMuraille + 1));
+            
+            // Vérifier si la muraille peut être revendiquée
+            Joueur titulaire = muraille.revendiquerBorne();
+            if (titulaire != null) {
+                System.out.println("La Muraille " + (numeroMuraille + 1) + " a été revendiquée par " + titulaire.getNom() + " !");
+            } else {
+                System.out.println("La Muraille " + (numeroMuraille + 1) + " n'est pas encore revendiquée.");
+            }
+            
+            
         } else {
-            System.out.println("Impossible de jouer sur cette Muraille (limite atteinte ou règle non respectée).");
+            System.out.println("Impossible de jouer sur la Muraille " + (numeroMuraille + 1) + " (limite atteinte ou règle non respectée).");
         }
     }
+
 
     public void jouerTourIA(int joueurNum) {
+        // Récupère l'objet Joueur correspondant au numéro du joueur
         Joueur joueur = getJoueur(joueurNum);
-        Carte carteChoisie = ia.choisirCarteStrategique(joueur);
-
-        if (carteChoisie != null) {
-            int murailleChoisie = ia.choisirMurailleStrategique(murailles, joueurNum);
-            jouerTour(murailleChoisie, joueurNum, carteChoisie);
-            joueur.getMain().remove(carteChoisie); // Retire la carte après l'avoir jouée
-            System.out.println(joueur.getNom() + " (IA) a joué " + carteChoisie + " sur la Muraille " + (murailleChoisie + 1));
-        } else {
+        
+        // Choisir une carte aléatoire de la main du joueur
+        Carte carteChoisie = ia.choisirCarteAleatoire(joueur);
+        if (carteChoisie == null) {
             System.out.println(joueur.getNom() + " (IA) n'a plus de cartes à jouer.");
+            return;
+        }
+
+        // Choisir une muraille disponible pour jouer
+        int murailleChoisie = ia.choisirMurailleAleatoire(murailles, joueur);
+        if (murailleChoisie == -1) {
+            System.out.println("Aucune muraille disponible pour jouer. " + joueur.getNom() + " (IA) passe son tour.");
+            return;
+        }
+
+        // Tente de jouer la carte sur la muraille choisie
+        Muraille muraille = murailles.get(murailleChoisie);
+        if (muraille.ajouterCarte(joueur, carteChoisie)) {
+            joueur.getMain().remove(carteChoisie); // Retire la carte de la main après l'avoir jouée
+            System.out.println(joueur.getNom() + " (IA) a joué " + carteChoisie + " sur la Muraille " + (murailleChoisie + 1));
+            
+            // Vérifier si la muraille peut être revendiquée
+            Joueur titulaire = muraille.revendiquerBorne();
+            if (titulaire != null) {
+                System.out.println("La Muraille " + (murailleChoisie + 1) + " a été revendiquée par " + titulaire.getNom() + " !");
+            } else {
+                System.out.println("La Muraille " + (murailleChoisie + 1) + " n'est pas encore revendiquée.");
+            }
+            
+            // Piocher une nouvelle carte pour l'IA si le deck n'est pas vide
+            Carte nouvelleCarte = piocherCarte();
+            if (nouvelleCarte != null) {
+                joueur.ajouterCarte(nouvelleCarte);
+                System.out.println(joueur.getNom() + " (IA) a pioché une nouvelle carte : " + nouvelleCarte);
+            } else {
+                System.out.println("Le deck est vide. Plus de cartes à piocher.");
+            }
+        } else {
+            // Si jouer la carte échoue, l'IA ne joue pas ce tour
+            System.out.println("Impossible de jouer sur la Muraille " + (murailleChoisie + 1) + ". " + joueur.getNom() + " (IA) passe son tour.");
         }
     }
+
 
     public boolean verifierVictoire() {
         int muraillesRevendiqueesJoueur1 = 0;
         int muraillesRevendiqueesJoueur2 = 0;
 
         for (Muraille muraille : murailles) {
-            int gagnant = muraille.revendiquerBorne();
-            if (gagnant == 1) {
+            Joueur gagnant = muraille.getJoueurRevendiquant();
+            if (gagnant == joueur1 ) {
                 muraillesRevendiqueesJoueur1++;
-            } else if (gagnant == 2) {
+            } else if (gagnant == joueur2) {
                 muraillesRevendiqueesJoueur2++;
             }
         }
@@ -153,10 +200,7 @@ public class Jeu {
             } else if (muraillesRevendiqueesJoueur2 > muraillesRevendiqueesJoueur1) {
                 scoreManager.ajouterVictoire(joueur2.getNom());
                 System.out.println(joueur2.getNom() + " remporte la partie par domination des murailles !");
-            } else {
-                System.out.println("Égalité parfaite ! Aucun joueur ne remporte cette partie.");
-            }
-
+            } 
             scoreManager.afficherScores();
             return true;
         }
@@ -164,8 +208,20 @@ public class Jeu {
         return false;
     }
 
+
     public Variante getVariante() {
         return variante;
     }
-}
 
+    public Carte piocherCarte() {
+        if (!deck.isEmpty()) {
+            return deck.remove(0); // Retire et retourne la première carte du deck
+        }
+        return null; // Si le deck est vide, retourne null
+    }
+    
+    public int getTailleDeck() {
+        return deck.size();
+    }
+
+}
